@@ -1,0 +1,10 @@
+#define CONFIG_MQTT_SERVER "192.168.2.2"
+#define CONFIG_MQTT_TOPIC "dev_led"
+#define CONFIG_SSID ""
+#define CONFIG_PASSWORD ""
+#define CONFIG_NTP_SERVER "pool.ntp.org"
+#define CONFIG_LIGHT 1023
+#define CONFIG_TIME_OFF 5
+#define CONFIG_FADE_TIME 5
+#define CONFIG_LED_PIN D4
+#define CONFIG_PWM_REVERSE false
