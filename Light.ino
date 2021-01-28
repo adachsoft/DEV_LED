@@ -1,7 +1,10 @@
-void initLight()
+void setupLight()
 {
   pinMode(LED_PIN, OUTPUT);
-  lightOff();
+  lightState = LIGHT_STATE_OFF;
+  powerOn = false;
+  isFadeMode = false;
+  setLedPWM(0);
 }
 
 void lightOffAfterTime()

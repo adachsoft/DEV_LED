@@ -5,8 +5,14 @@
 #define MOTION_PIR
 #define DS18B20_MODULE
 #define DS18B20_MODULE_MQTT_DEV_ADDR
+//#define LOG_MODULE
 
 #ifdef DEBUG
+  /*#define LOG_STR(str) { Serial.print(F(str)); logServer(F(str)); }
+  #define LOGLN_STR(str) { Serial.println(F(str)); logServerLn(str); }
+  #define LOGLN(value) { Serial.println(value); logServerLn(value); }
+  #define LOG(value) { Serial.print(value); logServer(value); }*/
+  
   #define LOG_STR(str) { Serial.print(F(str)); }
   #define LOGLN_STR(str) { Serial.println(F(str)); }
   #define LOGLN(value) { Serial.println(value); }
@@ -19,8 +25,6 @@
 #endif
 
 #define SIZE_OF_EEPROM 768
-//#define MQTT_MAX_TRANSFER_SIZE 1 * 1024
-#define MQTT_MAX_PACKET_SIZE 2 * 1024
 
 #ifdef DS18B20_MODULE
 #define TEMPERATURE_SENSORS_MAX 3
@@ -103,15 +107,23 @@ PubSubClient mqttClient(espClient);
 #define MQTT_TOPIC_SENSOR "tele/%topic%/SENSOR"
 #define MQTT_TOPIC_CONFIG_STAT "stat/%topic%/CONFIG"
 #define MQTT_TOPIC_CONFIG_CMND "cmnd/%topic%/CONFIG"
+#define MQTT_TOPIC_CONFIG_MODULE_STAT "stat/%topic%/CONFIG/MODULE"
+#define MQTT_TOPIC_CONFIG_MODULE_CMND "cmnd/%topic%/CONFIG/MODULE"
 String mqttTopicPower;
 String mqttTopicSensor;
 String mqttTopicConfigStat;
 String mqttTopicConfigCmnd;
+String mqttTopicConfigModuleStat;
+String mqttTopicConfigModuleCmnd;
 
 //HTTP Server
 #ifdef HTTP_MODULE
 #include <ESP8266WebServer.h>
 ESP8266WebServer server(80);
+#endif
+
+#ifdef LOG_MODULE
+WiFiServer wifiServer(8000);
 #endif
 
 #include "ir_module.h";
@@ -138,7 +150,6 @@ Command command(arrayOfCommands, commands, CMD_COUNT);
 #endif
 //------------------------------------
 
-
 long mainLoop;
 long currentMillis;
 long statMillis;
@@ -151,22 +162,25 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println();
-  
-  initLight();
 
   Serial.print("Dev ID: ");
   Serial.println(getDevId());
+  Serial.println(__DATE__);
+  Serial.println(__TIME__);
 
   initEEPROM();
   readEEPROM();
+
+  setupLight();
+  
   #ifdef DS18B20_MODULE
   setupOneWire();
   #endif
 
   setupWIFI();
+  setupTime();
 
   #ifdef HTTP_MODULE
-  //Initialize Webserver
   initHTTP();
   #endif
 
@@ -178,15 +192,17 @@ void setup()
   setupMotionPir();
   #endif
 
-  setupMQTT();
-  setupTime();
-  
+  #ifdef LOG_MODULE
+  setupLog();
+  #endif
+
   currentMillis = millis();
   statMillis = currentMillis;
   mainLoop = currentMillis;
-  //mqttMillis = currentMillis;
   mqttMillis = 0;
   resetMillis == 0;
+
+  setupMQTT();
 }
 
 void loop() 
@@ -238,6 +254,23 @@ void loop()
   #ifdef MOTION_PIR
   loopMotionPir();
   #endif
+
+  /*WiFiClient client = wifiServer.available();
+ 
+  if (client) {
+     while (client.connected()) {
+       while (client.available() > 0) {
+        char c = client.read();
+        Serial.write(c);
+      }
+ 
+      //delay(10);
+    }
+ 
+    //client.stop();
+    //Serial.println("Client disconnected");
+ 
+  }*/
 
   resetDelay();
 }

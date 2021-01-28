@@ -16,7 +16,7 @@ void powerCommandJSON(String message)
   StaticJsonDocument<200> doc;
   DeserializationError error = deserializeJson(doc, message);
   if (error) {
-    Serial.println(error.c_str());
+    LOGLN(error.c_str());
     return;
   }
 
@@ -46,37 +46,37 @@ void powerCommandJSON(String message)
 void powerCommandSimple(String command)
 {
   if (command == "ON") {
-    Serial.println("ON");
+    LOGLN_STR("ON");
     lightOn();
     return;
   }
   if (command == "OFF") {
-    Serial.println("OFF");
+    LOGLN_STR("OFF");
     lightOff();
     return;
   }
   if (command == "TOGGLE") {
-    Serial.println("TOGGLE");
+    LOGLN_STR("TOGGLE");
     lightToggle();
     return;
   }
   if (command == "ON_TIME") {
-    Serial.println("ON_TIME");
+    LOGLN_STR("ON_TIME");
     lightOnWithTimeOff(config.timeOff);
     return;
   }
   if (command == "FADE_IN") {
-    Serial.println("FADE_IN");
+    LOGLN_STR("FADE_IN");
     lightFadeInStart(config.fadeTime);
     return;
   }
   if (command == "FADE_OUT") {
-    Serial.println("FADE_OUT");
+    LOGLN_STR("FADE_OUT");
     lightFadeOutStart(config.fadeTime);
     return;
   }
   if (command == "TOGGLE_FADE") {
-    Serial.println("TOGGLE_FADE");
+    LOGLN_STR("TOGGLE_FADE");
     lightToggleFade(config.fadeTime);
     return;
   }

@@ -14,6 +14,12 @@ void setupMQTT()
   mqttTopicConfigCmnd = MQTT_TOPIC_CONFIG_CMND;
   mqttTopicConfigCmnd.replace("%topic%", config.mqttTopic);
 
+  mqttTopicConfigModuleStat = MQTT_TOPIC_CONFIG_MODULE_STAT;
+  mqttTopicConfigModuleStat.replace("%topic%", config.mqttTopic);
+
+  mqttTopicConfigModuleCmnd = MQTT_TOPIC_CONFIG_MODULE_CMND;
+  mqttTopicConfigModuleCmnd.replace("%topic%", config.mqttTopic);
+
   #ifdef DS18B20_MODULE
   mqttTopicConfigTempStat = MQTT_TOPIC_CONFIG_TEMP_STAT;
   mqttTopicConfigTempStat.replace("%topic%", config.mqttTopic);
@@ -23,13 +29,18 @@ void setupMQTT()
   #endif
 
   #ifdef MOTION_PIR
-  mqttTopicConfigMotionPirStat = MQTT_TOPIC_CONFIG_TEMP_STAT;
+  mqttTopicConfigMotionPirStat = MQTT_TOPIC_CONFIG_MOTION_PIR_STAT;
   mqttTopicConfigMotionPirStat.replace("%topic%", config.mqttTopic);
 
   mqttTopicConfigMotionPirCmnd = MQTT_TOPIC_CONFIG_MOTION_PIR_CMND;
   mqttTopicConfigMotionPirCmnd.replace("%topic%", config.mqttTopic);
   #endif
 
+  if (mqttClient.setBufferSize(1024)) {
+    LOGLN("setBufferSize Y");
+  } else {
+    LOGLN("setBufferSize N");
+  }
   mqttClient.setServer(config.mqttServer, 1883);
   mqttClient.setCallback(mqttCallback);
 }
@@ -52,6 +63,7 @@ void reconnectMQTT()
   clientId += getDevId();
 
   #ifdef DEBUG
+  Serial.println(formattedDateTime);
   Serial.print("Attempting MQTT connection to: ");
   Serial.print(config.mqttServer);
   Serial.print(" ...");
@@ -81,6 +93,7 @@ void mqttSubscribe()
 {
   mqttSubscribe((char*)mqttTopicPower.c_str());
   mqttSubscribe((char*)mqttTopicConfigCmnd.c_str());
+  mqttSubscribe((char*)mqttTopicConfigModuleCmnd.c_str());
 
   #ifdef DS18B20_MODULE
   mqttSubscribe((char*)mqttTopicConfigTempCmnd.c_str());
@@ -95,10 +108,18 @@ void mqttSubscribe()
   }
 }
 
+/*void mqttSubscribeWithReplace(char* topic)
+{
+  String mqttTopic = String(topic);
+  mqttTopic.replace("%topic%", config.mqttTopic);
+  
+  mqttSubscribe((char*)mqttTopic);
+}*/
+
 void mqttSubscribe(char* topic)
 {
-  Serial.print("subscribe: ");
-  Serial.println(topic);
+  LOG_STR("Subscribe: ");
+  LOGLN(topic);
   mqttClient.subscribe(topic);
 }
 
@@ -120,6 +141,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length)
 
   if (mqttTopicConfigCmnd == topic) {
     mqttHandleConfig(payload);
+    return;
+  }
+
+  if (mqttTopicConfigModuleCmnd == topic) {
+    mqttHandleConfigModule(payload);
     return;
   }
 
@@ -159,23 +185,26 @@ void mqttHandleConfig(byte* payload)
   mqttHandleConfig(message);
 }
 
+void mqttHandleConfigModule(String message)
+{
+  String configJson = configModuleToJson();
+  mqttClient.publish((char*)mqttTopicConfigModuleStat.c_str(), (char*)configJson.c_str());
+}
+
+void mqttHandleConfigModule(byte* payload)
+{
+  mqttHandleConfigModule(String((char *)payload));
+}
+
 #ifdef MOTION_PIR
 void mqttHandleConfigMotionPir(String message)
 {
-  LOGLN_STR("mqttHandleConfigMotionPir 1");
   if (0 != message.length()) {
-    LOGLN_STR("mqttHandleConfigMotionPir 2");
     configMotionPirFromJson(message);
+    writeEEPROM();
   }
-  LOGLN_STR("mqttHandleConfigMotionPir 3");
   String configJson = configMotionPirToJson();
-
-  LOGLN_STR("mqttHandleConfigMotionPir 4");
-  LOGLN(configJson);
-  LOGLN(configJson.length());
-  
-  bool b = mqttClient.publish((char*)mqttTopicConfigMotionPirStat.c_str(), (char*)configJson.c_str());
-  LOGLN(b ? "Y" : "N");
+  mqttClient.publish((char*)mqttTopicConfigMotionPirStat.c_str(), (char*)configJson.c_str());
 }
 
 void mqttHandleConfigMotionPir(byte* payload)
@@ -258,6 +287,7 @@ void publishResult()
   topic.replace("%topic%", config.mqttTopic);
 
   StaticJsonDocument<64> jsonMessage;
+  jsonMessage["TIME"] = formattedDateTime;
   jsonMessage["POWER"] = getPowerState();
   jsonMessage["LIGHT"] = config.light;
   jsonMessage["CURRENT_LIGHT"] = currentLight;

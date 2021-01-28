@@ -1,5 +1,5 @@
 #define CONFIG_START 32
-#define CONFIG_VERSION 10
+#define CONFIG_VERSION 11
 
 void writeEEPROM()
 {

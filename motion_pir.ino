@@ -16,10 +16,6 @@ void setupMotionPir()
 
   mqttTopicMotionPir = MQTT_TOPIC_MOTION_PIR;
   mqttTopicMotionPir.replace("%topic%", config.mqttTopic);
-
-  //strcpy(config.motionPirCmndStateH, "{\"current_light\":500,\"time_off\":30}");
-  //strcpy(config.mqttTopicMotionPirH, "cmnd/dev_led2/POWER");
-  //strcpy(config.mqttMessageMotionPirH, "{\"current_light\":500,\"time_off\":3}");
 }
 
 void loopMotionPir()

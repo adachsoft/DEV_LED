@@ -64,6 +64,7 @@ const char CONFIG_HTML[] PROGMEM = R"=====(
                 <option value="0">D3 / GPIO 0</option>
                 <option value="2">D4 / GPIO 2</option>
                 <option value="14">D5 / GPIO 14</option>
+                <option value="15">D8 / GPIO 15</option>
                 <option value="3">RX / GPIO 3</option>
                 <option value="1">TX / GPIO 1</option>
               </select>
